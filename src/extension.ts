@@ -12,34 +12,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 function duplicateCode() {
     let editor = vscode.window.activeTextEditor;
-    let document = editor.document;
+    if (!editor) return;
     let selections = editor.selections;
-    
-    let newSelections: vscode.Selection[] = [];
 
-    for (let i = 0; i < selections.length; i++) {
-        const selection = selections[i];
-        if (selection.isEmpty) {
-            //Duplicate line
-            editor.edit(textEdit => {
+    editor.edit(textEdit => {
+        for (let i = 0; i < selections.length; i++) {
+            const selection = selections[i];
+            if (selection.isEmpty) {
+                //Duplicate line
                 const text = editor.document.lineAt(selection.start.line).text;
-                textEdit.insert(new vscode.Position(selection.start.line, text.length), `\r\n${text}`);
-            });
-        } else {
-            const text = editor.document.getText(selection);
-            editor.edit(textEdit => {
+                textEdit.insert(new vscode.Position(selection.start.line, 0), `${text}\r\n`);
+            } else {
                 //Duplicate fragment
-                textEdit.insert(selection.end, text);
-            }).then(() => {
-                //Modify new selection (it contains the old one plus the new one)
-                let extendedSelections = editor.selections;
-                const newSelectionStart = selection.end;
-                const newSelectionEnd = extendedSelections[i].end;
-                const newSelection = new vscode.Selection(newSelectionStart, newSelectionEnd);
-                newSelections.push(newSelection);
-                editor.selections = newSelections;
-            });
-
+                const text = editor.document.getText(selection);
+                textEdit.insert(selection.start, text);
+            }
         }
-    }
+    });
 }
